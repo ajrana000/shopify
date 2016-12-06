@@ -10,6 +10,7 @@
 	}
 
 
+
 	function is_valid_request($query_params, $shared_secret)
 	{
 		if (!isset($query_params['timestamp'])) return false;
@@ -18,13 +19,20 @@
 		$older_than_a_day = $query_params['timestamp'] < (time() - $seconds_in_a_day);
 		if ($older_than_a_day) return false;
 
-		$signature = $query_params['signature'];
-		unset($query_params['signature']);
+		
+		foreach($query_params as $param => $value) {
+	    if ($param != 'signature' && $param != 'hmac') {
+		$params[$param] = "{$param}={$value}";
+	    }
+		}
+		asort($params);
+		
+		$params = implode('&', $params);
+		$hmac = $_GET['hmac'];
+		$calculatedHmac = hash_hmac('sha256', $params, $shared_secret);
 
-		foreach ($query_params as $key=>$val) $params[] = "$key=$val";
-		sort($params);
-
-		return (md5($shared_secret.implode('', $params)) === $signature);
+		return ($hmac == $calculatedHmac);
+		
 	}
 
 
